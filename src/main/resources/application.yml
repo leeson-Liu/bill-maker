@@ -1,0 +1,12 @@
+server:
+  port: 9000
+logging:
+  level:
+    root: INFO
+spring:
+  profiles:
+    active: dev
+
+info:
+  build:
+    artifact: billMaker
