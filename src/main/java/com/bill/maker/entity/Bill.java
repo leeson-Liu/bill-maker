@@ -4,6 +4,7 @@ import java.util.List;
 
 /**
  * Bill 账单类
+ *
  * @version 1.0.0
  */
 public class Bill {

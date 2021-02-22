@@ -2,6 +2,7 @@ package com.bill.maker.entity;
 
 /**
  * Good 商品类
+ *
  * @version 1.0.0
  */
 public class Good {
@@ -14,12 +15,12 @@ public class Good {
     /**
      * @param higestPrice 最高价格
      */
-    private double higestPrice;
+    private int higestPrice;
 
     /**
      * @param lowestPrice 最低价格
      */
-    private double lowestPrice;
+    private int lowestPrice;
 
     /**
      * @param goodWeight 权重
@@ -27,8 +28,7 @@ public class Good {
     private int goodWeight;
 
 
-
-    public Good(String goodName, double higestPrice, double lowestPrice, int goodWeight) {
+    public Good(String goodName, int higestPrice, int lowestPrice, int goodWeight) {
         this.goodName = goodName;
         this.higestPrice = higestPrice;
         this.lowestPrice = lowestPrice;
@@ -50,12 +50,16 @@ public class Good {
         return lowestPrice;
     }
 
-    public void setLowestPrice(double lowestPrice) {
+    public void setLowestPrice(int lowestPrice) {
         this.lowestPrice = lowestPrice;
     }
 
     public double getHigestPrice() {
         return higestPrice;
+    }
+
+    public void setHigestPrice(int higestPrice) {
+        this.higestPrice = higestPrice;
     }
 
     public String getGoodName() {
@@ -64,5 +68,15 @@ public class Good {
 
     public void setGoodName(String goodName) {
         this.goodName = goodName;
+    }
+
+    @Override
+    public String toString() {
+        return "Good{" +
+                "goodName='" + goodName + '\'' +
+                ", higestPrice=" + higestPrice +
+                ", lowestPrice=" + lowestPrice +
+                ", goodWeight=" + goodWeight +
+                '}';
     }
 }
