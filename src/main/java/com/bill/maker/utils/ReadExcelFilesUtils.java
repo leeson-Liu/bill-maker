@@ -21,17 +21,17 @@ public class ReadExcelFilesUtils {
     private Row row;
 
     public ReadExcelFilesUtils(String filepath) {
-        if(filepath==null){
+        if (filepath == null) {
             return;
         }
         String ext = filepath.substring(filepath.lastIndexOf("."));
         try {
             InputStream is = new FileInputStream(filepath);
-            if(".xls".equals(ext)){
+            if (".xls".equals(ext)) {
                 wb = new HSSFWorkbook(is);
-            }else if(".xlsx".equals(ext)){
+            } else if (".xlsx".equals(ext)) {
                 wb = new XSSFWorkbook(is);
-            }else{
+            } else {
                 wb = null;
             }
         } catch (FileNotFoundException e) {
@@ -47,8 +47,8 @@ public class ReadExcelFilesUtils {
      * @return String 表头内容的数组
      * @author zengwendong
      */
-    public String[] readExcelTitle() throws Exception{
-        if(wb==null){
+    public String[] readExcelTitle() throws Exception {
+        if (wb == null) {
             throw new Exception("Workbook对象为空！");
         }
         sheet = wb.getSheetAt(0);
@@ -70,11 +70,11 @@ public class ReadExcelFilesUtils {
      * @return Map 包含单元格数据内容的Map对象
      * @author zengwendong
      */
-    public Map<Integer, Map<Integer,Object>> readExcelContent() throws Exception{
-        if(wb==null){
+    public Map<Integer, Map<Integer, Object>> readExcelContent() throws Exception {
+        if (wb == null) {
             throw new Exception("Workbook对象为空！");
         }
-        Map<Integer, Map<Integer,Object>> content = new HashMap<Integer, Map<Integer,Object>>();
+        Map<Integer, Map<Integer, Object>> content = new HashMap<Integer, Map<Integer, Object>>();
 
         sheet = wb.getSheetAt(0);
         // 得到总行数
@@ -85,7 +85,7 @@ public class ReadExcelFilesUtils {
         for (int i = 1; i <= rowNum; i++) {
             row = sheet.getRow(i);
             int j = 0;
-            Map<Integer,Object> cellValue = new HashMap<Integer, Object>();
+            Map<Integer, Object> cellValue = new HashMap<Integer, Object>();
             while (j < colNum) {
                 Object obj = getCellFormatValue(row.getCell(j));
                 cellValue.put(j, obj);
@@ -97,7 +97,6 @@ public class ReadExcelFilesUtils {
     }
 
     /**
-     *
      * 根据Cell类型设置数据
      *
      * @param cell
@@ -110,6 +109,7 @@ public class ReadExcelFilesUtils {
             // 判断当前Cell的Type
             switch (cell.getCellType()) {
                 case Cell.CELL_TYPE_NUMERIC:// 如果当前Cell的Type为NUMERIC
+                    cellvalue = cell.getNumericCellValue();
                 case Cell.CELL_TYPE_FORMULA: {
                     // 判断当前的cell是否为Date
                     if (DateUtil.isCellDateFormatted(cell)) {
