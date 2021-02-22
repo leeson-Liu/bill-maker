@@ -2,6 +2,7 @@ package com.bill.maker.controller;
 
 import com.bill.maker.entity.Good;
 import com.bill.maker.utils.ReadExcelFilesUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,22 +15,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.bill.maker.data.GoodsData.GOOD_LIST;
+
 @RestController("BillMakerController")
 @RequestMapping("/bill")
+@Slf4j
 public class BillMakerController {
 
-    private Logger logger = LoggerFactory.getLogger(ReadExcelFilesUtils.class);
     public static String filepath = "D:\\file\\";
 
     @GetMapping("/helloWorld")
     public String hello(@RequestParam(value = "word") String word) {
-
+        log.info("good init data size :{}", GOOD_LIST.size());
         return "ok " + word;
     }
 
     @GetMapping("/upload")
     public String upload(@RequestParam(value = "filename") String filename) {
-        logger.info("开始读取excel文件");
+        // public String upload(@RequestParam("mfile") MultipartFile mfile) {
+        log.info("开始读取excel文件");
         String fileFullName = filepath + filename;
         ReadExcelFilesUtils readExcelFilesUtils = new ReadExcelFilesUtils(fileFullName);
         List<Good> goodsList = new ArrayList<Good>();
@@ -41,23 +45,24 @@ public class BillMakerController {
             while (dataIndex < dataSize) {
                 Good good = new Good();
                 // 品名
-                good.setGoodName(dataMap.get(dataIndex).get(0).toString());
+                good.setName(dataMap.get(dataIndex).get(0).toString());
                 // 最低价格
-                good.setLowestPrice(new Double(Double.parseDouble(
+                good.setMixPrice(new Double(Double.parseDouble(
                         dataMap.get(dataIndex).get(1).toString())).intValue());
                 // 最高价格
-                good.setHigestPrice(new Double(Double.parseDouble(
+                good.setMaxPrice(new Double(Double.parseDouble(
                         dataMap.get(dataIndex).get(2).toString())).intValue());
                 // 权重
-                good.setGoodWeight(new Double(Double.parseDouble(
+                good.setWeight(new Double(Double.parseDouble(
                         dataMap.get(dataIndex).get(3).toString())).intValue());
                 goodsList.add(good);
                 dataIndex++;
             }
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("e:{}", e.getMessage());
         }
-        logger.info("文件读取结束");
+        log.info("文件读取结束");
         return goodsList.toString();
     }
 
