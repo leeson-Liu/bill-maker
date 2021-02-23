@@ -38,33 +38,47 @@ public class BillMakerController {
         ReadExcelFilesUtils readExcelFilesUtils = new ReadExcelFilesUtils(fileFullName);
         List<Good> goodsList = new ArrayList<Good>();
         try {
+            // 获得源数据
             Map<Integer, Map<Integer, Object>> dataMap = readExcelFilesUtils.readExcelContent();
-            int dataSize = dataMap.size();
-            int dataIndex = 1;
-
-            while (dataIndex < dataSize) {
-                Good good = new Good();
-                // 品名
-                good.setName(dataMap.get(dataIndex).get(0).toString());
-                // 最低价格
-                good.setMixPrice(new Double(Double.parseDouble(
-                        dataMap.get(dataIndex).get(1).toString())).intValue());
-                // 最高价格
-                good.setMaxPrice(new Double(Double.parseDouble(
-                        dataMap.get(dataIndex).get(2).toString())).intValue());
-                // 权重
-                good.setWeight(new Double(Double.parseDouble(
-                        dataMap.get(dataIndex).get(3).toString())).intValue());
-                goodsList.add(good);
-                dataIndex++;
-            }
+            // 生成商品列表
+            goodsList = creatGoodsList(dataMap);
         } catch (Exception e) {
             e.printStackTrace();
             log.error("e:{}", e.getMessage());
         }
         log.info("文件读取结束");
+
+
         return goodsList.toString();
     }
 
+    /**
+     * 生成商品列表
+     * @param dataMap 源数据列表
+     */
+    private List<Good> creatGoodsList(Map<Integer, Map<Integer, Object>> dataMap){
+
+        List<Good> goodsList = new ArrayList<Good>();
+        int dataSize = dataMap.size();
+        int dataIndex = 1;
+
+        while (dataIndex < dataSize) {
+            Good good = new Good();
+            // 品名
+            good.setName(dataMap.get(dataIndex).get(0).toString());
+            // 最低价格
+            good.setMixPrice(new Double(Double.parseDouble(
+                    dataMap.get(dataIndex).get(1).toString())).intValue());
+            // 最高价格
+            good.setMaxPrice(new Double(Double.parseDouble(
+                    dataMap.get(dataIndex).get(2).toString())).intValue());
+            // 权重
+            good.setWeight(new Double(Double.parseDouble(
+                    dataMap.get(dataIndex).get(3).toString())).intValue());
+            goodsList.add(good);
+            dataIndex++;
+        }
+        return goodsList;
+    }
 
 }
