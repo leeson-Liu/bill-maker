@@ -15,13 +15,19 @@ import lombok.*;
 public class Good {
 
     private int id;
+
     @ExcelColumn(value = "品名")
     private String name;
+
     @ExcelColumn(value = "价格最高")
     private Integer maxPrice;
+
     @ExcelColumn(value = "价格最低")
     private Integer mixPrice;
+
     @ExcelColumn(value = "权重")
     private Integer weight;
+
+    private Integer realPrice;
 
 }
