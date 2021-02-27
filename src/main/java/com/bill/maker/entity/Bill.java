@@ -40,12 +40,17 @@ public class Bill {
     private int requestedAmount;
 
     /**
+     * @param requestNO 请求号码
+     */
+    private String requestNO;
+
+    /**
      * @param goodList 商品列表
      */
     private List<Good> goodList;
 
 
-    public Bill(String gustName, String address, String postalCode, String representName, String telNo, int requestedAmount, List<Good> goodList) {
+    public Bill(String gustName, String address, String postalCode, String representName, String telNo, int requestedAmount, String requestNO, List<Good> goodList) {
         this.gustName = gustName;
         this.address = address;
         this.postalCode = postalCode;
@@ -53,6 +58,7 @@ public class Bill {
         this.telNo = telNo;
         this.requestedAmount = requestedAmount;
         this.goodList = goodList;
+        this.requestNO = requestNO;
     }
 
     public Bill() {
@@ -105,6 +111,14 @@ public class Bill {
 
     public void setRequestedAmount(int requestedAmount) {
         this.requestedAmount = requestedAmount;
+    }
+
+    public String getRequestNO() {
+        return requestNO;
+    }
+
+    public void setRequestNO(String requestNO) {
+        this.requestNO = requestNO;
     }
 
     public List<Good> getGoodList() {
