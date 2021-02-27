@@ -30,4 +30,7 @@ public class Good {
 
     private Integer realPrice;
 
+    private Integer num;
+
+    private Integer totalPrice;
 }
