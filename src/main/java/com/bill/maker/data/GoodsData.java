@@ -6,6 +6,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +16,9 @@ public class GoodsData implements ApplicationRunner {
 
 
     public static final List<Good> GOOD_LIST = new ArrayList<>();
-    public static final Integer ALL_GOOD_MIN_PRICE = 50;
+    public static final BigDecimal ALL_GOOD_MIN_PRICE = BigDecimal.valueOf(50D);
+    public static Integer BILL_NO = 0;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         GOOD_LIST.add(Good.builder().id(1).name("靴").mixPrice(300).maxPrice(4000).weight(8).build());

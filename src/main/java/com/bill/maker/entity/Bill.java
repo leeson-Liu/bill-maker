@@ -1,5 +1,11 @@
 package com.bill.maker.entity;
 
+import com.bill.maker.utils.ExcelColumn;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 /**
@@ -7,11 +13,33 @@ import java.util.List;
  *
  * @version 1.0.0
  */
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Bill {
 
-    /**
-     * @param gustName 请求先名称
-     */
+    @ExcelColumn(value = "交易时间")
+    private String payTime;
+
+    @ExcelColumn(value = "交易对方")
+    private String customerName;
+
+    @ExcelColumn(value = "收/支")
+    private String billType;
+
+    @ExcelColumn(value = "金额(元)")
+    private String money;
+
+
+
+   //番号
+    private String requestNO;
+
+    private List<Good> goodList;
+
+    private String telNo;
+
     private String gustName;
 
     /**
@@ -23,109 +51,4 @@ public class Bill {
      * @param postalCode 邮编号码
      */
     private String postalCode;
-
-    /**
-     * @param representName 代表人名
-     */
-    private String representName;
-
-    /**
-     * @param telNo 电话号码
-     */
-    private String telNo;
-
-    /**
-     * @param requestedAmount 请求金额
-     */
-    private int requestedAmount;
-
-    /**
-     * @param requestNO 请求号码
-     */
-    private String requestNO;
-
-    /**
-     * @param goodList 商品列表
-     */
-    private List<Good> goodList;
-
-
-    public Bill(String gustName, String address, String postalCode, String representName, String telNo, int requestedAmount, String requestNO, List<Good> goodList) {
-        this.gustName = gustName;
-        this.address = address;
-        this.postalCode = postalCode;
-        this.representName = representName;
-        this.telNo = telNo;
-        this.requestedAmount = requestedAmount;
-        this.goodList = goodList;
-        this.requestNO = requestNO;
-    }
-
-    public Bill() {
-    }
-
-
-    public String getGustName() {
-        return gustName;
-    }
-
-    public void setGustName(String gustName) {
-        this.gustName = gustName;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getRepresentName() {
-        return representName;
-    }
-
-    public void setRepresentName(String representName) {
-        this.representName = representName;
-    }
-
-    public String getTelNo() {
-        return telNo;
-    }
-
-    public void setTelNo(String telNo) {
-        this.telNo = telNo;
-    }
-
-    public int getRequestedAmount() {
-        return requestedAmount;
-    }
-
-    public void setRequestedAmount(int requestedAmount) {
-        this.requestedAmount = requestedAmount;
-    }
-
-    public String getRequestNO() {
-        return requestNO;
-    }
-
-    public void setRequestNO(String requestNO) {
-        this.requestNO = requestNO;
-    }
-
-    public List<Good> getGoodList() {
-        return goodList;
-    }
-
-    public void setGoodList(List<Good> goodList) {
-        this.goodList = goodList;
-    }
 }

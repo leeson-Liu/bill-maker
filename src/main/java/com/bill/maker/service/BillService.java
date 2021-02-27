@@ -11,8 +11,7 @@ import java.util.List;
  **/
 public interface BillService {
 
-    String helloWord(String word);
 
-    List<Good> makeBill(Integer money);
+    List<Good> makeBill(Double money);
 
 }

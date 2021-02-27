@@ -1,9 +1,10 @@
 package com.bill.maker.controller;
 
+import com.bill.maker.data.GoodsData;
 import com.bill.maker.entity.Bill;
 import com.bill.maker.entity.Good;
 import com.bill.maker.service.BillService;
-import com.bill.maker.utils.ExcelUtils;
+import com.bill.maker.utils.CsvUtils;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.pdf.*;
@@ -11,18 +12,17 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.Font;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-//import com.bill.maker.utils.ReadExcelFilesUtils;
 
 @RestController("BillMakerController")
 @RequestMapping("/bill")
@@ -34,62 +34,44 @@ public class BillMakerController {
     public static String FILEPATH = "D:\\file\\";
     // 账单最大商品种类
     public static int MAX_GOODS_NUM = 15;
-
-    @GetMapping("/helloWorld")
-    public String hello(@RequestParam(value = "word") String word) {
-        return billService.helloWord(word);
-    }
+    public static String UPLOAD_FOLD_PATH = "D:\\file\\upload\\";
+    public static String BILL_DONE_FOLD_PATH = "D:\\file\\pdf\\done\\";
 
     @GetMapping("/make")
-    public List<Good> hello(@RequestParam(value = "money") Integer money) {
+    public List<Good> makeBill(@RequestParam(value = "money") Double money) {
         return billService.makeBill(money);
     }
 
     @GetMapping("/upload")
-    public String upload(@RequestParam(value = "filename") String filename) {
-        log.info("开始读取excel文件");
-        String fileFullName = FILEPATH + filename;
-        List<Good> goodsList = ExcelUtils.readExcel(fileFullName, Good.class);
-        log.info("文件读取结束");
-        log.info("创建映射数据");
-        Bill bill = new Bill();
-        bill.setGoodList(goodsList);
-        Map<String, Object> dataMap = creatDataMap(bill);
-        log.info("填充PDF模板");
-        fillPdfTemplate(dataMap);
-        log.info("打印数据");
-        return goodsList.toString();
-    }
+    public String upload(@RequestParam(value = "filename") String filename) throws Exception {
+        log.info("csv");
+        File uploadFileList = new File(UPLOAD_FOLD_PATH);
 
-    /**
-     * 生成商品列表
-     *
-     * @param dataMap 源数据列表
-     */
-    private List<Good> creatGoodsList(Map<Integer, Map<Integer, Object>> dataMap) {
-
-        List<Good> goodsList = new ArrayList<>();
-        int dataSize = dataMap.size();
-        int dataIndex = 1;
-
-        while (dataIndex < dataSize) {
-            Good good = new Good();
-            // 品名
-            good.setName(dataMap.get(dataIndex).get(0).toString());
-            // 最低价格
-            good.setMixPrice(new Double(Double.parseDouble(
-                    dataMap.get(dataIndex).get(1).toString())).intValue());
-            // 最高价格
-            good.setMaxPrice(new Double(Double.parseDouble(
-                    dataMap.get(dataIndex).get(2).toString())).intValue());
-            // 权重
-            good.setWeight(new Double(Double.parseDouble(
-                    dataMap.get(dataIndex).get(3).toString())).intValue());
-            goodsList.add(good);
-            dataIndex++;
+        File[] fileList = uploadFileList.listFiles();
+        assert fileList != null;
+        for (File file : fileList) {
+            InputStream inputStream = new FileInputStream(file);
+            MultipartFile multipartFile = new MockMultipartFile(file.getName(), inputStream);
+            List<Bill> billList = CsvUtils.readCsv(multipartFile, Bill.class);
+            for (Bill bill : billList) {
+                if ("收入".equals(bill.getBillType())) {
+                    bill.setPayTime(bill.getPayTime().substring(0, bill.getPayTime().indexOf(" ")));
+                    Double money = Double.valueOf(bill.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
+                    List<Good> goodList = billService.makeBill(money);
+                    bill.setGoodList(goodList);
+                    Integer no = ++GoodsData.BILL_NO;
+                    bill.setRequestNO(String.format("%08d", no));
+                    Map<String, Object> dataMap = creatDataMap(bill);
+                    log.info("填充PDF模板");
+                    String fileName = bill.getCustomerName() + "_" + bill.getPayTime();
+                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", ""));
+                    log.info("打印数据");
+                }
+            }
         }
-        return goodsList;
+        return "ok";
     }
+
 
     /**
      * 创建映射数据
@@ -111,20 +93,20 @@ public class BillMakerController {
             dataMap.put("fill_" + textIndex, goodsList.get(index).getRealPrice().toString());
             textIndex++;
             // 数量
-            dataMap.put("fill_"+textIndex,goodsList.get(index).getNum().toString());
+            dataMap.put("fill_" + textIndex, goodsList.get(index).getNum().toString());
             textIndex++;
             // 金额
             dataMap.put("fill_" + textIndex, goodsList.get(index).getTotalPrice().toString());
             textIndex++;
         }
-        // 客户名称
+        // 客户名称（代表社员）
         dataMap.put("fill_1", bill.getGustName());
         // 邮编号码
         dataMap.put("yubin", bill.getPostalCode());
         // 邮编号码
         dataMap.put("address", bill.getAddress());
         // 邮编号码
-        dataMap.put("daihyoName", bill.getRepresentName());
+        dataMap.put("daihyoName", bill.getCustomerName());
         // 电话号码
         dataMap.put("tel", bill.getTelNo());
         // 时间
@@ -133,7 +115,7 @@ public class BillMakerController {
         // 请求号码
         dataMap.put("requestNo", bill.getRequestNO());
         Map<String, Object> mappingMap = new HashMap();
-        mappingMap.put("datemap",dataMap);
+        mappingMap.put("datemap", dataMap);
         return mappingMap;
     }
 
@@ -142,15 +124,16 @@ public class BillMakerController {
      *
      * @param map 数据列表
      */
-    private void fillPdfTemplate(Map<String, Object> map) {
+    private void fillPdfTemplate(Map<String, Object> map, String fileName) throws IOException, DocumentException {
         // 模板路径
         String templatePath = "D:\\file\\pdf\\請求書_表单.pdf";//原PDF模板
         // 生成的新文件路径
-        String newPDFPath = "D:\\file\\pdf\\請求書.pdf";
-        PdfReader reader;
-        FileOutputStream out;
-        ByteArrayOutputStream bos;
-        PdfStamper stamper;
+        String newPDFPath = "D:\\file\\pdf\\done\\" + fileName + ".pdf";
+        String aaa = "D:\\file\\pdf\\done\\";
+        PdfReader reader = null;
+        FileOutputStream out = null;
+        ByteArrayOutputStream bos = null;
+        PdfStamper stamper = null;
         try {
             // 字体设置
             BaseFont bf = BaseFont.createFont("C:/windows/fonts/simsun.ttc,1", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
@@ -184,11 +167,34 @@ public class BillMakerController {
             doc.close();
             System.err.println("生成pdf文件完成！");
         } catch (IOException e) {
-            System.out.println(e);
-        } catch (DocumentException e) {
-            System.out.println(e);
-
+            log.error("error:{}__{}", e.getCause(), e.getMessage());
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+            if (out != null) {
+                out.close();
+            }
+            if (bos != null) {
+                bos.close();
+            }
+            if (stamper != null) {
+                stamper.close();
+            }
         }
     }
+
+    private static void createFile(File file, long length) throws IOException {
+        RandomAccessFile r = null;
+        try {
+            r = new RandomAccessFile(file, "rw");
+            r.setLength(length);
+        } finally {
+            if (r != null) {
+                r.close();
+            }
+        }
+    }
+
 
 }

@@ -9,6 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,39 +31,39 @@ public class BillServiceImpl implements BillService {
      * 这种单笔大额的转账次数一个月差不多有一次左右
      */
     @Override
-    public List<Good> makeBill(Integer money) {
+    public List<Good> makeBill(Double money) {
         List<Good> result = new ArrayList<>();
-
-        Integer priceSum = 0;
-        Integer remainingMoney = 0;
+        BigDecimal bigDecimalMoney = BigDecimal.valueOf(money);
+        BigDecimal priceSum = BigDecimal.ZERO;
+        BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
             Good good = getRandomGood();
-            Integer price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
+            BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
             good.setRealPrice(price);
-            Integer num;
+            int num;
             if (result.size() == 0) {
                 num = 1;
             } else {
                 num = getNum();
             }
             good.setNum(num);
-            Integer totalPrice = price * num;
+            BigDecimal totalPrice = price.multiply(BigDecimal.valueOf((double) num));
             good.setTotalPrice(totalPrice);
-            if (totalPrice + priceSum <= money) {
+            if (totalPrice.add(priceSum).compareTo(bigDecimalMoney) <= 0) {
                 result.add(good);
-                priceSum = priceSum + totalPrice;
+                priceSum = priceSum.add(totalPrice);
             }
-            if (money - priceSum < 500) {
-                remainingMoney = money - priceSum;
+            if (bigDecimalMoney.subtract(priceSum).compareTo(BigDecimal.valueOf(500D)) < 0) {
+                remainingMoney = bigDecimalMoney.subtract(priceSum);
                 break;
             }
         }
 
         //凑单
-        if (remainingMoney >= ALL_GOOD_MIN_PRICE) {
+        if (remainingMoney.compareTo(ALL_GOOD_MIN_PRICE) >= 0) {
             for (; ; ) {
                 Good good = getRandomGood();
-                if (good.getMixPrice() < remainingMoney && remainingMoney < good.getMaxPrice()) {
+                if (BigDecimal.valueOf(good.getMixPrice()).compareTo(remainingMoney) < 0 && remainingMoney.compareTo(BigDecimal.valueOf(Double.valueOf(good.getMaxPrice()))) < 0) {
                     good.setRealPrice(remainingMoney);
                     good.setNum(1);
                     good.setTotalPrice(remainingMoney);
@@ -74,8 +75,8 @@ public class BillServiceImpl implements BillService {
             log.debug("凑单触发: remainingMoney:{}", remainingMoney);
             Good good = result.get(0);
             log.debug("凑单前 good:{}", result.get(0));
-            good.setTotalPrice(good.getTotalPrice() + remainingMoney);
-            good.setRealPrice(good.getRealPrice() + remainingMoney);
+            good.setTotalPrice(good.getTotalPrice().add(remainingMoney));
+            good.setRealPrice(good.getRealPrice().add(remainingMoney));
             result.set(0, good);
             log.debug("凑单前 good:{}", result.get(0));
         }
@@ -84,16 +85,15 @@ public class BillServiceImpl implements BillService {
         return result;
     }
 
-    private Integer getRandomPrice(Integer max, Integer min) {
+    private BigDecimal getRandomPrice(Integer max, Integer min) {
         int result = (int) (Math.random() * (max - min) + min);
-        return result/10*10;
+        return BigDecimal.valueOf((double) (result / 10 * 10));
     }
 
     private Integer getNum() {
-        Integer max = 7;
-        Integer min = 1;
-        int result = (int) (Math.random() * (max - min) + min);
-        return result;
+        int max = 7;
+        int min = 1;
+        return (int) (Math.random() * (max - min) + min);
     }
 
     private Good getRandomGood() {
@@ -107,12 +107,6 @@ public class BillServiceImpl implements BillService {
         Good good = new Good();
         BeanUtils.copyProperties(randomGood, good);
         return good;
-    }
-
-    @Override
-    public String helloWord(String word) {
-
-        return "ok " + word;
     }
 
 

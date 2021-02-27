@@ -3,6 +3,8 @@ package com.bill.maker.entity;
 import com.bill.maker.utils.ExcelColumn;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 /**
  * Good 商品类
  *
@@ -28,9 +30,9 @@ public class Good {
     @ExcelColumn(value = "权重")
     private Integer weight;
 
-    private Integer realPrice;
+    private BigDecimal realPrice;
 
     private Integer num;
 
-    private Integer totalPrice;
+    private BigDecimal totalPrice;
 }
