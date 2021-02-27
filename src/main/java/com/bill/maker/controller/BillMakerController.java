@@ -31,7 +31,7 @@ public class BillMakerController {
     }
 
     @GetMapping("/make")
-    public String hello(@RequestParam(value = "money") Integer money) {
+    public List<Good> hello(@RequestParam(value = "money") Integer money) {
         return billService.makeBill(money);
     }
 

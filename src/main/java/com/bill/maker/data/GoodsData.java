@@ -15,7 +15,7 @@ public class GoodsData implements ApplicationRunner {
 
 
     public static final List<Good> GOOD_LIST = new ArrayList<>();
-
+    public static final Integer ALL_GOOD_MIN_PRICE = 50;
     @Override
     public void run(ApplicationArguments args) throws Exception {
         GOOD_LIST.add(Good.builder().id(1).name("靴").mixPrice(300).maxPrice(4000).weight(8).build());
@@ -69,7 +69,7 @@ public class GoodsData implements ApplicationRunner {
         GOOD_LIST.add(Good.builder().id(49).name("マスク").mixPrice(50).maxPrice(300).weight(5).build());
         GOOD_LIST.add(Good.builder().id(50).name("IQOS").mixPrice(300).maxPrice(1000).weight(4).build());
         GOOD_LIST.add(Good.builder().id(51).name("キャラクター雑貨").mixPrice(200).maxPrice(500).weight(3).build());
-        log.info("good data init success");
+        log.info("good data init success! size:{}", GOOD_LIST.size());
     }
 
 }
