@@ -64,7 +64,7 @@ public class BillMakerController {
                     Map<String, Object> dataMap = creatDataMap(bill);
                     log.info("填充PDF模板");
                     String fileName = bill.getCustomerName() + "_" + bill.getPayTime();
-                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", ""));
+                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/","_"));
                     log.info("打印数据");
                 }
             }
