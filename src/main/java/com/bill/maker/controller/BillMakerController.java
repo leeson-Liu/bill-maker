@@ -44,6 +44,8 @@ public class BillMakerController {
     private static String CUSTOMERNAME = "王　学実";
     // 电话
     private static String TELNO = "08039944428";
+    // 日元汇率
+    private static double EXCHANGE_RATE = 0.065;
 
     @GetMapping("/make")
     public List<Good> makeBill(@RequestParam(value = "money") Double money) {
@@ -65,7 +67,7 @@ public class BillMakerController {
                 /// 地址
                 bill.setAddress(ADDRESS);
                 // 邮编号码
-                 bill.setPostalCode(POSTALCODE);
+                bill.setPostalCode(POSTALCODE);
                 // 代表社员
                 bill.setGustName(CUSTOMERNAME);
                 // 电话
@@ -80,7 +82,7 @@ public class BillMakerController {
                     Map<String, Object> dataMap = creatDataMap(bill);
                     log.info("填充PDF模板");
                     String fileName = bill.getCustomerName() + "_" + bill.getPayTime();
-                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/","_"));
+                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                     log.info("打印数据");
                 }
             }
@@ -131,8 +133,15 @@ public class BillMakerController {
         dataMap.put("time", sdf.format(new Date()));
         // 请求号码
         dataMap.put("requestNo", bill.getRequestNO());
-        // 请求金额
-        dataMap.put("seikyuKingaku", bill.getMoney());
+        // 请求金额(元)
+        dataMap.put("seikyuKingaku_gen", bill.getMoney());
+        // 请求金额(円)
+        int money = new Double(bill.getMoney()
+                                    .replace("¥", "")
+                                    .replace(",", ""))
+                                    .intValue();
+        int requestMoney = (int) (money / EXCHANGE_RATE);
+        dataMap.put("seikyuKingaku_en", "¥" + Integer.toString(requestMoney));
         Map<String, Object> mappingMap = new HashMap();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
