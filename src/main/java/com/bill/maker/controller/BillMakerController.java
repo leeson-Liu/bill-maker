@@ -36,6 +36,14 @@ public class BillMakerController {
     public static int MAX_GOODS_NUM = 15;
     public static String UPLOAD_FOLD_PATH = "D:\\file\\upload\\";
     public static String BILL_DONE_FOLD_PATH = "D:\\file\\pdf\\done\\";
+    // 地址
+    private static String ADDRESS = "福岡県福岡市東区三苫7-16-11 ラメール三苫102号 ";
+    // 邮编号码
+    private static String POSTALCODE = "811-0201";
+    // 代表社员
+    private static String CUSTOMERNAME = "王　学実";
+    // 电话
+    private static String TELNO = "08039944428";
 
     @GetMapping("/make")
     public List<Good> makeBill(@RequestParam(value = "money") Double money) {
@@ -54,6 +62,14 @@ public class BillMakerController {
             MultipartFile multipartFile = new MockMultipartFile(file.getName(), inputStream);
             List<Bill> billList = CsvUtils.readCsv(multipartFile, Bill.class);
             for (Bill bill : billList) {
+                /// 地址
+                bill.setAddress(ADDRESS);
+                // 邮编号码
+                 bill.setPostalCode(POSTALCODE);
+                // 代表社员
+                bill.setGustName(CUSTOMERNAME);
+                // 电话
+                bill.setTelNo(TELNO);
                 if ("收入".equals(bill.getBillType())) {
                     bill.setPayTime(bill.getPayTime().substring(0, bill.getPayTime().indexOf(" ")));
                     Double money = Double.valueOf(bill.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
@@ -64,7 +80,7 @@ public class BillMakerController {
                     Map<String, Object> dataMap = creatDataMap(bill);
                     log.info("填充PDF模板");
                     String fileName = bill.getCustomerName() + "_" + bill.getPayTime();
-                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", ""));
+                    fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/","_"));
                     log.info("打印数据");
                 }
             }
@@ -98,15 +114,16 @@ public class BillMakerController {
             // 金额
             dataMap.put("fill_" + textIndex, goodsList.get(index).getTotalPrice().toString());
             textIndex++;
+
         }
         // 客户名称（代表社员）
-        dataMap.put("fill_1", bill.getGustName());
+        dataMap.put("fill_1", bill.getCustomerName());
         // 邮编号码
         dataMap.put("yubin", bill.getPostalCode());
         // 邮编号码
         dataMap.put("address", bill.getAddress());
-        // 邮编号码
-        dataMap.put("daihyoName", bill.getCustomerName());
+        // 代表社员
+        dataMap.put("daihyoName", bill.getGustName());
         // 电话号码
         dataMap.put("tel", bill.getTelNo());
         // 时间
@@ -114,6 +131,8 @@ public class BillMakerController {
         dataMap.put("time", sdf.format(new Date()));
         // 请求号码
         dataMap.put("requestNo", bill.getRequestNO());
+        // 请求金额
+        dataMap.put("seikyuKingaku", bill.getMoney());
         Map<String, Object> mappingMap = new HashMap();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
