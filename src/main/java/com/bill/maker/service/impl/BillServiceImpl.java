@@ -37,6 +37,9 @@ public class BillServiceImpl implements BillService {
         BigDecimal priceSum = BigDecimal.ZERO;
         BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
+            if (i == 500000) {
+                log.error("问题数据 money:{}", money);
+            }
             Good good = getRandomGood();
             BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
             good.setRealPrice(price);
@@ -44,7 +47,7 @@ public class BillServiceImpl implements BillService {
             if (result.size() == 0) {
                 num = 1;
             } else {
-                num = getNum();
+                num = getNum(money);
             }
             good.setNum(num);
             BigDecimal totalPrice = price.multiply(BigDecimal.valueOf((double) num));
@@ -72,13 +75,13 @@ public class BillServiceImpl implements BillService {
                 }
             }
         } else {
-            log.debug("凑单触发: remainingMoney:{}", remainingMoney);
+            log.info("凑单触发: remainingMoney:{}", remainingMoney);
             Good good = result.get(0);
-            log.debug("凑单前 good:{}", result.get(0));
+            log.info("凑单前 good:{}", result.get(0));
             good.setTotalPrice(good.getTotalPrice().add(remainingMoney));
             good.setRealPrice(good.getRealPrice().add(remainingMoney));
             result.set(0, good);
-            log.debug("凑单前 good:{}", result.get(0));
+            log.info("凑单前 good:{}", result.get(0));
         }
 
 
@@ -90,9 +93,10 @@ public class BillServiceImpl implements BillService {
         return BigDecimal.valueOf((double) (result / 10 * 10));
     }
 
-    private Integer getNum() {
-        int max = 7;
-        int min = 1;
+    private Integer getNum(Double money) {
+        Integer times = money.intValue() / 5000 + 1;
+        int max = 7 * times;
+        int min = times;
         return (int) (Math.random() * (max - min) + min);
     }
 
