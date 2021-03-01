@@ -12,6 +12,10 @@ import java.util.List;
 public interface BillService {
 
 
-    List<Good> makeBill(Double money);
+    List<Good> randomGoodList(Double money);
+
+    String uploadWX();
+
+    String uploadZFB();
 
 }
