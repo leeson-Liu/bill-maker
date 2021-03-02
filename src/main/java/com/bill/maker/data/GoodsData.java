@@ -39,7 +39,7 @@ public class GoodsData implements ApplicationRunner {
         GOOD_LIST.add(Good.builder().id(16).name("ボディ化粧品").mixPrice(100).maxPrice(1000).weight(5).build());
         GOOD_LIST.add(Good.builder().id(17).name("手袋").mixPrice(200).maxPrice(1000).weight(4).build());
         GOOD_LIST.add(Good.builder().id(18).name("財布").mixPrice(200).maxPrice(2000).weight(4).build());
-        GOOD_LIST.add(Good.builder().id(19).name("バック").mixPrice(300).maxPrice(3000).weight(7).build());
+        GOOD_LIST.add(Good.builder().id(19).name("バック").mixPrice(600).maxPrice(3000).weight(7).build());
         GOOD_LIST.add(Good.builder().id(20).name("ポｰチ").mixPrice(200).maxPrice(800).weight(4).build());
         GOOD_LIST.add(Good.builder().id(21).name("チャ－ム").mixPrice(200).maxPrice(2000).weight(5).build());
         GOOD_LIST.add(Good.builder().id(22).name("キ－ホルダー").mixPrice(200).maxPrice(1000).weight(4).build());

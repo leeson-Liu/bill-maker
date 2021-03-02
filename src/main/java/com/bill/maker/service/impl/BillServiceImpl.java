@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 import static com.bill.maker.data.GoodsData.GOOD_LIST;
@@ -126,22 +127,25 @@ public class BillServiceImpl implements BillService {
                 List<BillWX> billWXList = CsvUtils.readCsv(multipartFile, BillWX.class);
                 for (BillWX billWX : billWXList) {
                     if ("收入".equals(billWX.getBillType())) {
-                        billWX.setPayTime(billWX.getPayTime().substring(0, billWX.getPayTime().indexOf(" ")));
+                        String dataString = billWX.getPayTime().substring(0, billWX.getPayTime().indexOf(" "));
+                        String[] aa = dataString.split("/");
+                        LocalDate date = LocalDate.of(Integer.valueOf(aa[0]), Integer.valueOf(aa[1]), Integer.valueOf(aa[2]));
+                        billWX.setPayTime(date.toString());
                         Double money = Double.valueOf(billWX.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
                         List<Good> goodList = this.randomGoodList(money);
                         billWX.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
-                        billWX.setRequestNO(String.format("%08d", no));
-                        Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO(), billWX.getMoney());
+                        billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%03d", no));
+                        Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO().replaceAll("_", ""), billWX.getMoney(), billWX.getPayTime());
                         log.info("填充PDF模板");
-                        String fileName = billWX.getCustomerName().replaceAll("\\*", "_") + "_" + billWX.getPayTime();
+                        String fileName = billWX.getRequestNO() + "_" + billWX.getCustomerName().replaceAll("\\*", "_") + "_" + billWX.getPayTime();
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                         log.info("打印数据");
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("error cause:{} message{}", e.getCause(), e.getMessage());
+            log.error("list error cause:{} message{}", e.getCause(), e.getMessage());
         }
         return "ok";
     }
@@ -168,10 +172,10 @@ public class BillServiceImpl implements BillService {
                         List<Good> goodList = this.randomGoodList(money);
                         billZFB.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
-                        billZFB.setRequestNO(String.format("%08d", no));
-                        Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO(), billZFB.getMoney());
+                        billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%03d", no));
+                        Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO(), billZFB.getMoney(), billZFB.getPayTime());
                         log.info("填充PDF模板");
-                        String fileName = billZFB.getCustomerName().replaceAll("\\*", "_") + "_" + billZFB.getPayTime();
+                        String fileName = billZFB.getRequestNO() + "_" + billZFB.getCustomerName().replaceAll("\\*", "_") + "_" + billZFB.getPayTime();
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                         log.info("打印数据");
                     }
@@ -190,7 +194,7 @@ public class BillServiceImpl implements BillService {
      * @param money
      * @return
      */
-    private Map<String, Object> creatDataMap(List<Good> goodsList, String customerName, String billNo, String money) {
+    private Map<String, Object> creatDataMap(List<Good> goodsList, String customerName, String billNo, String money, String payTime) {
         Map<String, String> dataMap = new HashMap<>();
         int textIndex = 2;
         for (int index = 0; index < goodsList.size(); index++) {
@@ -218,16 +222,15 @@ public class BillServiceImpl implements BillService {
         dataMap.put("daihyoName", CUSTOMERNAME);
         dataMap.put("tel", TELNO);
         // 时间
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
-        dataMap.put("time", sdf.format(new Date()));
+        dataMap.put("time", payTime.replaceAll("-", "/"));
         // 请求号码
         dataMap.put("requestNo", billNo);
         // 请求金额(元)
         dataMap.put("seikyuKingaku_gen", money);
         // 请求金额(円)
-        double requestMoneyCH = Double.parseDouble(money.replace("¥", ""));
+        double requestMoneyCH = Double.parseDouble(money.replaceAll("¥", "").replaceAll(",", ""));
         int moneyJP = (int) (requestMoneyCH / EXCHANGE_RATE);
-        dataMap.put("seikyuKingaku_en", money);
+        dataMap.put("seikyuKingaku_en","¥"+ moneyJP + "");
         Map<String, Object> mappingMap = new HashMap<>();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
