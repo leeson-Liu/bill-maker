@@ -53,6 +53,9 @@ public class BillServiceImpl implements BillService {
     // 电话
     private static String TELNO = "08039944428";
 
+    // 日元汇款
+    private static double EXCHANGE_RATE = 0.065;
+
     @Override
     public List<Good> randomGoodList(Double money) {
         List<Good> result = new ArrayList<>();
@@ -131,7 +134,7 @@ public class BillServiceImpl implements BillService {
                         billWX.setRequestNO(String.format("%08d", no));
                         Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO(), billWX.getMoney());
                         log.info("填充PDF模板");
-                        String fileName = billWX.getCustomerName().replaceAll("\\*","_") + "_" + billWX.getPayTime();
+                        String fileName = billWX.getCustomerName().replaceAll("\\*", "_") + "_" + billWX.getPayTime();
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                         log.info("打印数据");
                     }
@@ -168,7 +171,7 @@ public class BillServiceImpl implements BillService {
                         billZFB.setRequestNO(String.format("%08d", no));
                         Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO(), billZFB.getMoney());
                         log.info("填充PDF模板");
-                        String fileName = billZFB.getCustomerName().replaceAll("\\*","_") + "_" + billZFB.getPayTime();
+                        String fileName = billZFB.getCustomerName().replaceAll("\\*", "_") + "_" + billZFB.getPayTime();
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                         log.info("打印数据");
                     }
@@ -219,8 +222,12 @@ public class BillServiceImpl implements BillService {
         dataMap.put("time", sdf.format(new Date()));
         // 请求号码
         dataMap.put("requestNo", billNo);
-        // 请求金额
-        dataMap.put("seikyuKingaku", money);
+        // 请求金额(元)
+        dataMap.put("seikyuKingaku_gen", money);
+        // 请求金额(円)
+        double requestMoneyCH = Double.parseDouble(money.replace("¥", ""));
+        int moneyJP = (int) (requestMoneyCH / EXCHANGE_RATE);
+        dataMap.put("seikyuKingaku_en", money);
         Map<String, Object> mappingMap = new HashMap<>();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
