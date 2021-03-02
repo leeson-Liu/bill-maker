@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
@@ -226,11 +227,12 @@ public class BillServiceImpl implements BillService {
         // 请求号码
         dataMap.put("requestNo", billNo);
         // 请求金额(元)
-        dataMap.put("seikyuKingaku_gen", money.toString());
+        dataMap.put("seikyuKingaku_gen", money);
         // 请求金额(円)
         double requestMoneyCH = Double.parseDouble(money.replaceAll("¥", "").replaceAll(",", ""));
         int moneyJP = (int) (requestMoneyCH / EXCHANGE_RATE);
-        dataMap.put("seikyuKingaku_en","¥"+ moneyJP);
+        DecimalFormat df = new DecimalFormat("#,###");
+        dataMap.put("seikyuKingaku_en", "¥" + df.format(moneyJP));
         Map<String, Object> mappingMap = new HashMap<>();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
