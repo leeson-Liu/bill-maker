@@ -226,11 +226,11 @@ public class BillServiceImpl implements BillService {
         // 请求号码
         dataMap.put("requestNo", billNo);
         // 请求金额(元)
-        dataMap.put("seikyuKingaku_gen", money);
+        dataMap.put("seikyuKingaku_gen", money.toString());
         // 请求金额(円)
         double requestMoneyCH = Double.parseDouble(money.replaceAll("¥", "").replaceAll(",", ""));
         int moneyJP = (int) (requestMoneyCH / EXCHANGE_RATE);
-        dataMap.put("seikyuKingaku_en","¥"+ moneyJP + "");
+        dataMap.put("seikyuKingaku_en","¥"+ moneyJP);
         Map<String, Object> mappingMap = new HashMap<>();
         mappingMap.put("datemap", dataMap);
         return mappingMap;
