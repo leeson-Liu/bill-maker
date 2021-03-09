@@ -17,7 +17,7 @@ public class GoodsData implements ApplicationRunner {
 
     public static final List<Good> GOOD_LIST = new ArrayList<>();
     public static final BigDecimal ALL_GOOD_MIN_PRICE = BigDecimal.valueOf(50D);
-    public static Integer BILL_NO = 0;
+    public static Integer BILL_NO = 800;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {

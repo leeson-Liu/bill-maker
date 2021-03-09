@@ -59,14 +59,15 @@ public class BillServiceImpl implements BillService {
     private static double EXCHANGE_RATE = 0.065;
 
     @Override
-    public List<Good> randomGoodList(Double money) {
+    public List<Good> randomGoodList(Double money, String customerName) {
         List<Good> result = new ArrayList<>();
         BigDecimal bigDecimalMoney = BigDecimal.valueOf(money);
         BigDecimal priceSum = BigDecimal.ZERO;
         BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
             if (i == 500000) {
-                log.error("问题数据 money:{}", money);
+                log.error("问题数据 money:{},customerName:{}", money, customerName);
+                break;
             }
             Good good = getRandomGood();
             BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
@@ -91,7 +92,7 @@ public class BillServiceImpl implements BillService {
         }
 
         //凑单
-        if (remainingMoney.compareTo(ALL_GOOD_MIN_PRICE) >= 0) {
+        if (remainingMoney.compareTo(ALL_GOOD_MIN_PRICE) > 0) {
             for (; ; ) {
                 Good good = getRandomGood();
                 if (BigDecimal.valueOf(good.getMixPrice()).compareTo(remainingMoney) < 0 && remainingMoney.compareTo(BigDecimal.valueOf(Double.valueOf(good.getMaxPrice()))) < 0) {
@@ -130,18 +131,21 @@ public class BillServiceImpl implements BillService {
                     if ("收入".equals(billWX.getBillType())) {
                         String dataString = billWX.getPayTime().substring(0, billWX.getPayTime().indexOf(" "));
                         String[] aa = dataString.split("/");
-                        LocalDate date = LocalDate.of(Integer.valueOf(aa[0]), Integer.valueOf(aa[1]), Integer.valueOf(aa[2]));
+                        LocalDate date = LocalDate.of(Integer.parseInt(aa[0]), Integer.parseInt(aa[1]), Integer.parseInt(aa[2]));
                         billWX.setPayTime(date.toString());
-                        Double money = Double.valueOf(billWX.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
-                        List<Good> goodList = this.randomGoodList(money);
+                        double money = Double.parseDouble(billWX.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
+                        if (money <= 50) {
+                            continue;
+                        }
+                        List<Good> goodList = this.randomGoodList(money, billWX.getCustomerName());
                         billWX.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
-                        billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%03d", no));
+                        billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
                         Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO().replaceAll("_", ""), billWX.getMoney(), billWX.getPayTime());
-                        log.info("填充PDF模板");
-                        String fileName = billWX.getRequestNO() + "_" + billWX.getCustomerName().replaceAll("\\*", "_") + "_" + billWX.getPayTime();
+                        String fileName = billWX.getPayTime() + "_" + billWX.getCustomerName().replaceAll("\\*", "_") + billWX.getRequestNO();
+                        log.info("fileName{}", fileName);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
-                        log.info("打印数据");
+
                     }
                 }
             }
@@ -163,22 +167,21 @@ public class BillServiceImpl implements BillService {
                 List<BillZFB> billZFBList = CsvUtils.readCsv(multipartFile, BillZFB.class);
                 for (BillZFB billZFB : billZFBList) {
                     double money;
-                    if (StringUtils.isNotEmpty(billZFB.getMoney())) {
+                    if (StringUtils.isNotEmpty(billZFB.getMoney()) && !"转账到卡".equals(billZFB.getWay())) {
                         money = Double.parseDouble(billZFB.getMoney().replaceAll("¥", "").replaceAll(",", "").trim());
                     } else {
                         continue;
                     }
-                    if (BigDecimal.valueOf(money).compareTo(ALL_GOOD_MIN_PRICE) >= 0) {
+                    if (BigDecimal.valueOf(money).compareTo(ALL_GOOD_MIN_PRICE) > 0) {
                         billZFB.setPayTime(billZFB.getPayTime().substring(0, billZFB.getPayTime().indexOf(" ")));
-                        List<Good> goodList = this.randomGoodList(money);
+                        List<Good> goodList = this.randomGoodList(money, billZFB.getCustomerName());
                         billZFB.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
-                        billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%03d", no));
-                        Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO(), billZFB.getMoney(), billZFB.getPayTime());
-                        log.info("填充PDF模板");
-                        String fileName = billZFB.getRequestNO() + "_" + billZFB.getCustomerName().replaceAll("\\*", "_") + "_" + billZFB.getPayTime();
+                        billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
+                        Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO().replaceAll("_", ""), billZFB.getMoney(), billZFB.getPayTime());
+                        String fileName = billZFB.getPayTime() + "_" + billZFB.getCustomerName().replaceAll("\\*", "_") + billZFB.getRequestNO();
+                        log.info("fileName{}", fileName);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
-                        log.info("打印数据");
                     }
                 }
             }
@@ -266,7 +269,6 @@ public class BillServiceImpl implements BillService {
             form.addSubstitutionFont(bf);
             for (String key : datemap.keySet()) {
                 String value = datemap.get(key);
-                System.out.println(value + "*(*(*(**---：" + key);
                 form.setField(key, value);
             }
             stamper.setFormFlattening(true);// 如果为false，生成的PDF文件可以编辑，如果为true，生成的PDF文件不可以编辑
@@ -282,7 +284,6 @@ public class BillServiceImpl implements BillService {
                 copy.addPage(importPage);
             }
             doc.close();
-            System.err.println("生成pdf文件完成！");
         } catch (Exception e) {
             log.error("make pdf error cause:{}message:{} fileName:{}", e.getCause(), e.getMessage(), fileName);
         } finally {
@@ -314,7 +315,17 @@ public class BillServiceImpl implements BillService {
     }
 
     private Integer getNum(Double money) {
-        Integer times = money.intValue() / 5000 + 1;
+        int times;
+        if (money > 100000 && money < 150000) {
+            times = money.intValue() / 10000 + 1;
+        } else if (money >= 150000 && money < 250000) {
+            times = money.intValue() / 20000 + 1;
+        } else if (money >= 250000) {
+            times = money.intValue() / 30000 + 1;
+        } else {
+            times = money.intValue() / 6000 + 1;
+        }
+
         int max = 7 * times;
         int min = times;
         return (int) (Math.random() * (max - min) + min);

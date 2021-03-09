@@ -23,7 +23,7 @@ public class BillMakerController {
 
     @GetMapping("/randomGoodList")
     public List<Good> randomGoodList(@RequestParam(value = "money") Double money) {
-        return billService.randomGoodList(money);
+        return billService.randomGoodList(money, "test");
     }
 
     /**

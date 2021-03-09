@@ -23,6 +23,9 @@ public class BillZFB {
     @ExcelColumn(value = "收入（+元）")
     private String money;
 
+    @ExcelColumn(value = "签约产品")
+    private String way;
+
     //番号
     private String requestNO;
 
