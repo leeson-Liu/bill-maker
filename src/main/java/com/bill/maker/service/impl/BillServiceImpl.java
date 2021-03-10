@@ -259,7 +259,7 @@ public class BillServiceImpl implements BillService {
         PdfStamper stamper = null;
         try {
             // 字体设置
-            BaseFont bf = BaseFont.createFont("C:/windows/fonts/simsun.ttc,1", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            //BaseFont bf = BaseFont.createFont("C:/windows/fonts/simsun.ttc,1", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             // 输出流
             out = new FileOutputStream(newPDFPath);
             // 读取pdf模板
@@ -268,7 +268,7 @@ public class BillServiceImpl implements BillService {
             stamper = new PdfStamper(reader, bos);
             AcroFields form = stamper.getAcroFields();
             Map<String, String> datemap = (Map<String, String>) map.get("datemap");
-            form.addSubstitutionFont(bf);
+            // form.addSubstitutionFont(bf);
             for (String key : datemap.keySet()) {
                 String value = datemap.get(key);
                 form.setField(key, value);
@@ -276,7 +276,7 @@ public class BillServiceImpl implements BillService {
             stamper.setFormFlattening(true);// 如果为false，生成的PDF文件可以编辑，如果为true，生成的PDF文件不可以编辑
             stamper.close();
             Document doc = new Document(PageSize.A4, 0, 0, 0, 0);
-            Font font = new Font(bf, 32);
+//            Font font = new Font(bf, 32);
             PdfCopy copy = new PdfCopy(doc, out);
             doc.open();
             PdfImportedPage importPage = null;
