@@ -65,19 +65,21 @@ public class BillServiceImpl implements BillService {
         BigDecimal priceSum = BigDecimal.ZERO;
         BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
-            if (i == 500000) {
+            if (i > 500000) {
                 log.error("问题数据 money:{},customerName:{}", money, customerName);
+                this.randomGoodList(money, customerName);
                 break;
             }
-            Good good = getRandomGood();
-            BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
-            good.setRealPrice(price);
+
             int num;
             if (result.size() == 0) {
                 num = 1;
             } else {
                 num = getNum(money);
             }
+            Good good = getRandomGood();
+            BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
+            good.setRealPrice(price);
             good.setNum(num);
             BigDecimal totalPrice = price.multiply(BigDecimal.valueOf((double) num));
             good.setTotalPrice(totalPrice);
@@ -142,7 +144,7 @@ public class BillServiceImpl implements BillService {
                         Integer no = ++GoodsData.BILL_NO;
                         billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
                         Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO().replaceAll("_", ""), billWX.getMoney(), billWX.getPayTime());
-                        String fileName = billWX.getPayTime() + "_" + billWX.getCustomerName().replaceAll("\\*", "_") + billWX.getRequestNO();
+                        String fileName = billWX.getPayTime() + "_" + dealCustomerNameForFileName(billWX.getCustomerName()) + "_" + billWX.getMoney();
                         log.info("fileName{}", fileName);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
 
@@ -179,7 +181,7 @@ public class BillServiceImpl implements BillService {
                         Integer no = ++GoodsData.BILL_NO;
                         billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
                         Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO().replaceAll("_", ""), billZFB.getMoney(), billZFB.getPayTime());
-                        String fileName = billZFB.getPayTime() + "_" + billZFB.getCustomerName().replaceAll("\\*", "_") + billZFB.getRequestNO();
+                        String fileName = billZFB.getPayTime() + "_" + dealCustomerNameForFileName(billZFB.getCustomerName()) + "_" + billZFB.getMoney();
                         log.info("fileName{}", fileName);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                     }
@@ -344,5 +346,8 @@ public class BillServiceImpl implements BillService {
         return good;
     }
 
+    private String dealCustomerNameForFileName(String customerName) {
+        return customerName.replaceAll("\\*", "_").replaceAll("#", "_").replaceAll(" ", "").replaceAll("\\\\", "_");
+    }
 
 }
