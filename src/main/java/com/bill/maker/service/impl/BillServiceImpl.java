@@ -65,19 +65,26 @@ public class BillServiceImpl implements BillService {
         BigDecimal priceSum = BigDecimal.ZERO;
         BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
-            if (i > 500000) {
+
+
+            int num;
+            Good good;
+            if (result.size() == 0) {
+                num = 1;
+                good = getRandomGood(8);
+            } else if (result.size() == 1) {
+                num = getNum(money);
+                good = getRandomGood(7);
+            } else {
+                num = getNum(money);
+                good = getRandomGood(0);
+            }
+
+            if (i > 500000 || good == null) {
                 log.error("问题数据 money:{},customerName:{}", money, customerName);
                 this.randomGoodList(money, customerName);
                 break;
             }
-
-            int num;
-            if (result.size() == 0) {
-                num = 1;
-            } else {
-                num = getNum(money);
-            }
-            Good good = getRandomGood();
             BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMixPrice());
             good.setRealPrice(price);
             good.setNum(num);
@@ -95,16 +102,11 @@ public class BillServiceImpl implements BillService {
 
         //凑单
         if (remainingMoney.compareTo(ALL_GOOD_MIN_PRICE) > 0) {
-            for (; ; ) {
-                Good good = getRandomGood();
-                if (BigDecimal.valueOf(good.getMixPrice()).compareTo(remainingMoney) < 0 && remainingMoney.compareTo(BigDecimal.valueOf(Double.valueOf(good.getMaxPrice()))) < 0) {
-                    good.setRealPrice(remainingMoney);
-                    good.setNum(1);
-                    good.setTotalPrice(remainingMoney);
-                    result.add(good);
-                    break;
-                }
-            }
+            Good good = Good.builder().id(13).name("生活雑貨").mixPrice(100).maxPrice(1000).weight(8).build();
+            good.setRealPrice(remainingMoney);
+            good.setNum(1);
+            good.setTotalPrice(remainingMoney);
+            result.add(good);
         } else {
             log.info("凑单触发: remainingMoney:{}", remainingMoney);
             Good good = result.get(0);
@@ -144,8 +146,8 @@ public class BillServiceImpl implements BillService {
                         Integer no = ++GoodsData.BILL_NO;
                         billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
                         Map<String, Object> dataMap = creatDataMap(billWX.getGoodList(), billWX.getCustomerName(), billWX.getRequestNO().replaceAll("_", ""), billWX.getMoney(), billWX.getPayTime());
-                        String fileName = billWX.getPayTime() + "_" + dealCustomerNameForFileName(billWX.getCustomerName()) + "_" + billWX.getMoney();
-                        log.info("fileName{}", fileName);
+                        String fileName = billWX.getPayTime() + "_" + dealCustomerNameForFileName(billWX.getCustomerName()) + "_" + billWX.getMoney() + "_" + no;
+                        log.info("fileName:{},no:{}", fileName, no);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
 
                     }
@@ -181,8 +183,8 @@ public class BillServiceImpl implements BillService {
                         Integer no = ++GoodsData.BILL_NO;
                         billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
                         Map<String, Object> dataMap = creatDataMap(billZFB.getGoodList(), billZFB.getCustomerName(), billZFB.getRequestNO().replaceAll("_", ""), billZFB.getMoney(), billZFB.getPayTime());
-                        String fileName = billZFB.getPayTime() + "_" + dealCustomerNameForFileName(billZFB.getCustomerName()) + "_" + billZFB.getMoney();
-                        log.info("fileName{}", fileName);
+                        String fileName = billZFB.getPayTime() + "_" + dealCustomerNameForFileName(billZFB.getCustomerName()) + "_" + billZFB.getMoney() + "_" + no;
+                        log.info("fileName:{},no:{}", fileName, no);
                         fillPdfTemplate(dataMap, fileName.replaceAll(" ", "").replaceAll("/", "_"));
                     }
                 }
@@ -223,6 +225,7 @@ public class BillServiceImpl implements BillService {
         }
 
         dataMap.put("fill_1", customerName);
+        log.info("pdf customerName:{}", customerName);
         dataMap.put("yubin", POSTALCODE);
         dataMap.put("address", ADDRESS);
         dataMap.put("daihyoName", CUSTOMERNAME);
@@ -333,21 +336,27 @@ public class BillServiceImpl implements BillService {
         return (int) (Math.random() * (max - min) + min);
     }
 
-    private Good getRandomGood() {
+    private Good getRandomGood(Integer weight) {
         List<Pair<Good, Integer>> pairList = new ArrayList<>();
         for (Good good : GOOD_LIST) {
             Pair<Good, Integer> pair = new ImmutablePair<>(good, good.getWeight());
             pairList.add(pair);
         }
         WeightRandom<Good, Integer> weightRandom = new WeightRandom(pairList);
-        Good randomGood = weightRandom.random();
+        Good randomGood = null;
+        for (int i = 0; i < 100000; i++) {
+            randomGood = weightRandom.random();
+            if (randomGood.getWeight() >= weight) {
+                break;
+            }
+        }
         Good good = new Good();
         BeanUtils.copyProperties(randomGood, good);
         return good;
     }
 
     private String dealCustomerNameForFileName(String customerName) {
-        return customerName.replaceAll("\\*", "_").replaceAll("#", "_").replaceAll(" ", "").replaceAll("\\\\", "_");
+        return customerName.replaceAll("\\?", "_").replaceAll("\\*", "_").replaceAll("#", "_").replaceAll(" ", "").replaceAll("\\\\", "_");
     }
 
 }
