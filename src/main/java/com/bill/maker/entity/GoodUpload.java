@@ -1,20 +1,18 @@
 package com.bill.maker.entity;
 
 import com.bill.maker.utils.ExcelColumn;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * Good 商品类
- *
- * @version 1.0.0
- */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Good {
+public class GoodUpload {
 
     private int id;
 
@@ -22,17 +20,11 @@ public class Good {
     private String name;
 
     @ExcelColumn(value = "价格最高")
-    private Integer maxPrice;
+    private String maxPrice;
 
     @ExcelColumn(value = "价格最低")
-    private Integer minPrice;
+    private String minPrice;
 
     @ExcelColumn(value = "权重")
-    private Integer weight;
-
-    private BigDecimal realPrice;
-
-    private Integer num;
-
-    private BigDecimal totalPrice;
+    private String weight;
 }

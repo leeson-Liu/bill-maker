@@ -1,13 +1,16 @@
 package com.bill.maker.controller;
 
 import com.bill.maker.entity.Good;
+import com.bill.maker.entity.GoodUpload;
 import com.bill.maker.service.BillService;
+import com.bill.maker.utils.CsvUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -40,6 +43,24 @@ public class BillMakerController {
             return billService.uploadWX();
         }
         return "wrong type:" + type;
+    }
+
+    /**
+     *
+     * @param file
+     * @return
+     * 用于生成品名初始数据的java代码
+     */
+    @GetMapping("/uploadGood")
+    public String upload(@RequestParam("file") MultipartFile file) {
+        int id = 1;
+        List<GoodUpload> goods = CsvUtils.readCsv(file, GoodUpload.class);
+        for (GoodUpload good : goods) {
+            System.out.println("GOOD_LIST.add(Good.builder().id(" + id + ").name(\"" + good.getName().trim() +"\").minPrice("+good.getMinPrice().trim()+").maxPrice("
+            +good.getMaxPrice()+").weight("+good.getWeight()+").build());");
+            id++;
+        }
+        return "ok";
     }
 
 
