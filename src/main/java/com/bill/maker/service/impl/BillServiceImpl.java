@@ -253,7 +253,7 @@ public class BillServiceImpl implements BillService {
      */
     private void fillPdfTemplate(Map<String, Object> map, String fileName) {
         // 模板路径
-        String templatePath = "D:\\file\\pdf\\請求書_表单.pdf";//原PDF模板
+        String templatePath = "src/main/resources/file/請求書_表单.pdf";//原PDF模板
         // 生成的新文件路径
         String newPDFPath = "D:\\file\\pdf\\done\\" + fileName + ".pdf";
         PdfReader reader = null;
@@ -262,7 +262,13 @@ public class BillServiceImpl implements BillService {
         PdfStamper stamper = null;
         try {
             // 字体设置
-            //BaseFont bf = BaseFont.createFont("C:/windows/fonts/simsun.ttc,1", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+//             BaseFont bf = BaseFont.createFont("STSong-Light","UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
+//             BaseFont bf = BaseFont.createFont("c://windows//fonts//simsun.ttc,1", BaseFont.IDENTITY_H,false);
+            BaseFont bf = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
+            Font fontZH = new Font(bf, 12, Font.NORMAL);
+//            Font font = new Font(bf, 32);
+//            ArrayList<BaseFont> fontList = new ArrayList<BaseFont>(1);
+//            fontList.add(bf);
             // 输出流
             out = new FileOutputStream(newPDFPath);
             // 读取pdf模板
@@ -271,7 +277,7 @@ public class BillServiceImpl implements BillService {
             stamper = new PdfStamper(reader, bos);
             AcroFields form = stamper.getAcroFields();
             Map<String, String> datemap = (Map<String, String>) map.get("datemap");
-            // form.addSubstitutionFont(bf);
+//            form.setSubstitutionFonts(fontList);
             for (String key : datemap.keySet()) {
                 String value = datemap.get(key);
                 form.setField(key, value);
