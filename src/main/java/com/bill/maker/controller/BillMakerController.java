@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -26,7 +27,20 @@ public class BillMakerController {
 
     @GetMapping("/randomGoodList")
     public List<Good> randomGoodList(@RequestParam(value = "money") Double money) {
-        return billService.randomGoodList(money, "test");
+        List<Good> goodList =  billService.randomGoodList(money, "test");
+        if (dataVail(goodList, money)) {
+            log.info("对了");
+        }else {
+            log.error("数据有误");
+        }
+        return goodList;
+    }
+    private boolean dataVail(List<Good> goodList, double money) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Good good : goodList) {
+            total = total.add(good.getTotalPrice());
+        }
+        return total.doubleValue() == money;
     }
 
     /**

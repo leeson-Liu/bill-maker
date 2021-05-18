@@ -26,8 +26,7 @@ import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.*;
 
-import static com.bill.maker.data.GoodsData.GOOD_LIST;
-import static com.bill.maker.data.GoodsData.ALL_GOOD_MIN_PRICE;
+import static com.bill.maker.data.GoodsData.*;
 
 /**
  * @author liubin
@@ -58,30 +57,54 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public List<Good> randomGoodList(Double money, String customerName) {
+        //根据金额设定确定的size
+        int listSize = -1;
         List<Good> result = new ArrayList<>();
+        if (money <= 1200D) {
+            //只生成一个物品
+            Good good = getOneGood(money);
+            good.setRealPrice(BigDecimal.valueOf(money));
+            good.setNum(1);
+            good.setTotalPrice(BigDecimal.valueOf(money));
+            result.add(good);
+            return result;
+        }
+        if (money > 1200 && money <= 3000) {
+            //两个
+            listSize = 2;
+        } else if (money > 3000 && money <= 5000) {
+            //三个四个
+            listSize = 3;
+        } else if (money > 5000 && money <= 10000) {
+            //五个六个
+            listSize = 5;
+        }
+
+
         BigDecimal bigDecimalMoney = BigDecimal.valueOf(money);
         BigDecimal priceSum = BigDecimal.ZERO;
         BigDecimal remainingMoney = BigDecimal.ZERO;
         for (int i = 0; ; i++) {
-
-
             int num;
             Good good;
             if (result.size() == 0) {
                 num = 1;
-                good = getRandomGood(8);
+                Random random = new Random();
+                int n = random.nextInt(GOOD_FIRST_LIST.size());
+                good = GOOD_FIRST_LIST.get(n);
             } else if (result.size() == 1) {
-                num = getNum(money);
-                good = getRandomGood(7);
+                Random random = new Random();
+                int n = random.nextInt(GOOD_FIRST_LIST.size());
+                good = GOOD_FIRST_LIST.get(n);
+                num = getNum(money, good.getWeight());
             } else {
-                num = getNum(money);
                 good = getRandomGood(0);
+                num = getNum(money, good.getWeight());
             }
 
             if (i > 500000 || good == null) {
-                log.error("问题数据 money:{},customerName:{}", money, customerName);
-                this.randomGoodList(money, customerName);
-                break;
+                log.error("AA问题数据 money:{},customerName:{}", money, customerName);
+                return this.randomGoodList(money, customerName);
             }
             BigDecimal price = getRandomPrice(good.getMaxPrice(), good.getMinPrice());
             good.setRealPrice(price);
@@ -92,7 +115,7 @@ public class BillServiceImpl implements BillService {
                 result.add(good);
                 priceSum = priceSum.add(totalPrice);
             }
-            if (bigDecimalMoney.subtract(priceSum).compareTo(BigDecimal.valueOf(500D)) < 0) {
+            if (bigDecimalMoney.subtract(priceSum).compareTo(BigDecimal.valueOf(400D)) < 0 || result.size() == listSize) {
                 remainingMoney = bigDecimalMoney.subtract(priceSum);
                 break;
             }
@@ -100,22 +123,58 @@ public class BillServiceImpl implements BillService {
 
         //凑单
         if (remainingMoney.compareTo(ALL_GOOD_MIN_PRICE) > 0) {
-            Good good = Good.builder().id(13).name("生活雑貨").minPrice(100).maxPrice(1000).weight(8).build();
-            good.setRealPrice(remainingMoney);
-            good.setNum(1);
-            good.setTotalPrice(remainingMoney);
-            result.add(good);
+
+            if (remainingMoney.compareTo(BigDecimal.valueOf(400D)) > 0) {
+                Good good = result.get(0);
+                BigDecimal leaveMoney = remainingMoney.add(good.getRealPrice());
+                BigDecimal price;
+                int num;
+                BigDecimal totalPrice;
+                for (int i = 0; ; i++) {
+                    price = getRandomPrice(good.getMaxPrice(), good.getMinPrice());
+                    num = leaveMoney.divide(good.getRealPrice(), 0, BigDecimal.ROUND_DOWN).intValue();
+
+                    totalPrice = price.multiply(BigDecimal.valueOf((double) num));
+                    if (leaveMoney.subtract(totalPrice).compareTo(BigDecimal.valueOf(400D)) < 0 && leaveMoney.subtract(totalPrice).compareTo(BigDecimal.ZERO) > 0) {
+                        break;
+                    }
+                    if (i > 500000 || good == null) {
+                        log.error("凑单问题数据 money:{},customerName:{}", money, customerName);
+                        return this.randomGoodList(money, customerName);
+                    }
+                }
+                if (num > 1) {
+                    log.info("price{},num{}", price, num);
+                }
+                good.setNum(num);
+                good.setTotalPrice(totalPrice);
+                good.setRealPrice(price);
+//                result.set(0, good);
+
+                Random random = new Random();
+                int n = random.nextInt(GOOD_LAST_LIST.size());
+                Good good2 = GOOD_LAST_LIST.get(n);
+                good2.setRealPrice(leaveMoney.subtract(totalPrice));
+                good2.setNum(1);
+                good2.setTotalPrice(leaveMoney.subtract(totalPrice));
+                result.add(good2);
+            } else {
+                Random random = new Random();
+                int n = random.nextInt(GOOD_LAST_LIST.size());
+                Good good = GOOD_LAST_LIST.get(n);
+                good.setRealPrice(remainingMoney);
+                good.setNum(1);
+                good.setTotalPrice(remainingMoney);
+                result.add(good);
+            }
+
         } else {
-            log.info("凑单触发: remainingMoney:{}", remainingMoney);
             Good good = result.get(0);
-            log.info("凑单前 good:{}", result.get(0));
             good.setTotalPrice(good.getTotalPrice().add(remainingMoney));
             good.setRealPrice(good.getRealPrice().add(remainingMoney));
             result.set(0, good);
-            log.info("凑单前 good:{}", result.get(0));
+            log.info("补单 good:{}", result.get(0));
         }
-
-
         return result;
     }
 
@@ -139,7 +198,16 @@ public class BillServiceImpl implements BillService {
                         if (money <= 50) {
                             continue;
                         }
-                        List<Good> goodList = this.randomGoodList(money, billWX.getCustomerName());
+                        List<Good> goodList;
+                        for (; ; ) {
+                            goodList = this.randomGoodList(money, billWX.getCustomerName());
+                            if (dataVail(goodList, money)) {
+                                log.info("对了,customerName{},money{}", billWX.getCustomerName(), money);
+                                break;
+                            } else {
+                                log.error("数据有误,customerName{},money{}", billWX.getCustomerName(), money);
+                            }
+                        }
                         billWX.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
                         billWX.setRequestNO(billWX.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
@@ -176,7 +244,17 @@ public class BillServiceImpl implements BillService {
                     }
                     if (BigDecimal.valueOf(money).compareTo(ALL_GOOD_MIN_PRICE) > 0) {
                         billZFB.setPayTime(billZFB.getPayTime().substring(0, billZFB.getPayTime().indexOf(" ")));
-                        List<Good> goodList = this.randomGoodList(money, billZFB.getCustomerName());
+                        List<Good> goodList;
+                        for (; ; ) {
+                            goodList = this.randomGoodList(money, billZFB.getCustomerName());
+                            if (dataVail(goodList, money)) {
+                                log.info("对了,customerName{},money{}", billZFB.getCustomerName(), money);
+                                break;
+                            } else {
+                                log.error("数据有误,customerName{},money{}", billZFB.getCustomerName(), money);
+                            }
+                        }
+
                         billZFB.setGoodList(goodList);
                         Integer no = ++GoodsData.BILL_NO;
                         billZFB.setRequestNO(billZFB.getPayTime().replaceAll("-", "_") + String.format("%05d", no));
@@ -191,6 +269,14 @@ public class BillServiceImpl implements BillService {
             log.error("deal file error cause:{} message{}", e.getCause(), e.getMessage());
         }
         return "ok";
+    }
+
+    private boolean dataVail(List<Good> goodList, double money) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Good good : goodList) {
+            total = total.add(good.getTotalPrice());
+        }
+        return total.compareTo(BigDecimal.valueOf(money)) == 0;
     }
 
     /**
@@ -223,7 +309,7 @@ public class BillServiceImpl implements BillService {
         }
 
         dataMap.put("fill_1", customerName);
-        log.info("pdf customerName:{}", customerName);
+//        log.info("pdf customerName:{}", customerName);
         dataMap.put("yubin", POSTALCODE);
         dataMap.put("address", ADDRESS);
         dataMap.put("daihyoName", CUSTOMERNAME);
@@ -260,7 +346,7 @@ public class BillServiceImpl implements BillService {
         PdfStamper stamper = null;
         try {
             // 字体设置
-             BaseFont bf = BaseFont.createFont("STSong-Light","UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
+            BaseFont bf = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
 //             BaseFont bf = BaseFont.createFont("c://windows//fonts//simsun.ttc,1", BaseFont.IDENTITY_H,false);
 //            Font fontZH = new Font(bf, 12, Font.NORMAL);
 //            Font font = new Font(bf, 32);
@@ -321,7 +407,7 @@ public class BillServiceImpl implements BillService {
         return BigDecimal.valueOf((double) (result / 10 * 10));
     }
 
-    private Integer getNum(Double money) {
+    private Integer getNum(Double money, Integer weight) {
         int times;
         if (money > 100000 && money < 150000) {
             times = money.intValue() / 10000 + 1;
@@ -330,12 +416,17 @@ public class BillServiceImpl implements BillService {
         } else if (money >= 250000) {
             times = money.intValue() / 30000 + 1;
         } else {
-            times = money.intValue() / 6000 + 1;
+            times = money.intValue() / 5000 + 1;
         }
 
-        int max = 7 * times;
+        int max = 10 * times;
         int min = times;
-        return (int) (Math.random() * (max - min) + min);
+        int result = (int) (Math.random() * (max - min) + min) * weight / 150 + 1;
+        if (money >= 10000 && result > 5) {
+            return 5;
+        } else {
+            return result;
+        }
     }
 
     private Good getRandomGood(Integer weight) {
@@ -356,6 +447,26 @@ public class BillServiceImpl implements BillService {
         BeanUtils.copyProperties(randomGood, good);
         return good;
     }
+
+    private Good getOneGood(Double money) {
+        List<Pair<Good, Integer>> pairList = new ArrayList<>();
+        for (Good good : GOOD_LIST) {
+            Pair<Good, Integer> pair = new ImmutablePair<>(good, good.getWeight());
+            pairList.add(pair);
+        }
+        WeightRandom<Good, Integer> weightRandom = new WeightRandom(pairList);
+        Good randomGood = null;
+        for (int i = 0; i < 100000; i++) {
+            randomGood = weightRandom.random();
+            if (Double.valueOf(randomGood.getMaxPrice()) >= money && Double.valueOf(randomGood.getMinPrice()) <= money) {
+                break;
+            }
+        }
+        Good good = new Good();
+        BeanUtils.copyProperties(randomGood, good);
+        return good;
+    }
+
 
     private String dealCustomerNameForFileName(String customerName) {
         return customerName.replaceAll("\\?", "_").replaceAll("\\*", "_").replaceAll("#", "_").replaceAll(" ", "").replaceAll("\\\\", "_");
